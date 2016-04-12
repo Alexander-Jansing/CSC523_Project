@@ -1,13 +1,13 @@
-import sys
+import sys;
+import numpy as np;
 
 ##This program will pay off debts by proportions
 def payLoans(file):
-	payOffs = getPayOffs(file[2]);
 	finances = readFile(file[1]);
 	totalDebt = sumDebt(finances);
 	totalPaid = 0;
-	printThings(finances);
-	for i in range(len(payOffs)):
+	months = 0;
+	while(not (len(finances) == 1 and finances[0]['balance'] < 1)):
 		if len(finances) == 0:
 			break;
 		loopTotal = 0;
@@ -15,12 +15,10 @@ def payLoans(file):
 		finances = monthlyMinPay(finances, minPayment);
 		for payment in minPayment:
 			totalPaid += sum(payment);
-		print finances;
-		## print totalPaid, minPayment, sum(minPayment)
-		totalPaid += payoffMax(finances, payOffs[i], loopTotal);
-	print totalPaid, totalDebt;
-	print "Congrats you paid off all your loans!";
-	print "It cost you $", totalPaid, "to pay off $", totalDebt, " in loans.";
+		totalPaid += payoffMax(finances, 200, loopTotal);
+		months += 1;
+	print "It cost you $", np.ceil(totalPaid), "to pay off $", np.ceil(totalDebt), "in loans over", months, "months";
+	print (totalPaid)/months
 
 def getPayOffs(file):
 	po = [];
@@ -33,20 +31,42 @@ def getPayOffs(file):
 def payoffMax(finances, extraPayoff, totalPaid):
 	if len(finances) == 0:
 			return totalPaid;
-	maxInterest = findMaxInterest(finances);
-	if extraPayoff > maxInterest['balance']:
-		extraPayoff -= maxInterest['balance'];
-		totalPaid += maxInterest['balance']
-		## print "TEST LINE ", totalPaid
-		finances = deleteMax(maxInterest, finances);
-		printCongrats(maxInterest);
-		payoffMax(finances, extraPayoff, totalPaid);
 	else:
-		maxInterest['balance'] -= extraPayoff;
-		totalPaid += extraPayoff;
-		finances = updateFinances(maxInterest, finances);
+		token = reduceBalances(finances, extraPayoff);
+		finances = token[0];
+		totalPaid += token[1];  # THIS FORMAT IT USED, BUT IN CASE THE LAST PAYOFF AMOUNT IS
+								## IS LESS THAN THE AMOUNT OWED -- THIS WAY WE ARE MORE ACCURATE
 	return totalPaid;
 
+def findSum(finances, token):
+	SUM = 0;
+	for debt in finances:
+		SUM += debt[token];
+	return SUM;
+
+def reduceBalances(finances, extraPayoff):
+	paid = 0; 
+	for i in range(len(finances)):
+		if(len(finances) == 1):
+			return [finances, 0];
+		sumInterests = findSum(finances, 'rate');   # IT LOOKS SLOPPY TO RECALCULATE THIS EVERY TIME,
+		sumBalances = findSum(finances, 'balance'); ## BUT WHEN DEBT IS PAID OFF, WE NEED IT TO BE
+													### REMOVED AND HAVE THE PROPORTIONS DISTRIBUTED
+		propToThisDebt = proportionedPayment(finances[i], sumInterests, sumBalances, extraPayoff);
+		if finances[i]['balance'] < propToThisDebt:
+			extraPayoff -= finances[i]['balance'];
+			paid += finances[i]['balance'];
+			del finances[i];
+			reduceBalances(finances, extraPayoff);
+			break;
+		else:
+			finances[i]['balance'] -= propToThisDebt;
+			paid += propToThisDebt;
+	return [finances, paid];
+
+def proportionedPayment(debt, rateSum, balSum, extraPayoff):
+	return debt['rate']/rateSum * debt['balance']/balSum * extraPayoff;
+			
 def monthlyMinPay(finances, minPayment):
 	for i in range(len(finances)):
 		finances[i]['balance'] -= minPayment[i][1];
@@ -58,12 +78,6 @@ def minimumPayments(finances):
 		minPayment.append([finances[i]['rate']*finances[i]['balance'], finances[i]['balance']*.03]);
 	return minPayment;
 
-def updateFinances(maxInterest, finances):
-	for i in range(len(finances)):
-		if finances[i]['id'] == maxInterest['id']:
-			finances[i] = maxInterest;
-	return finances;
-
 def sumDebt(finances):
 	totalDebt = 0
 	for json in finances:
@@ -72,37 +86,6 @@ def sumDebt(finances):
 
 def printCongrats(maxInterest):
 	print "Congrats! You paid off ", maxInterest, "!"
-
-def deleteMax(maxInterest, finances):
-	for i in range(len(finances)):
-		if finances[i]['id'] == maxInterest['id']:
-			## print "Deleting ", finances[i];
-			del finances[i];
-			break;
-	return finances
-
-def findMaxInterest(finances):
-	rates = collectRates(finances);
-	maxRate = max(rates);
-	debtOfInterest = findMaxBalance(maxRate, finances);
-	return debtOfInterest;
-
-def findMaxBalance(maxRate, finances):
-	j = {
-		'id':9999,
-		'balance':float(0),
-		'rate':float(0)
-	};
-	for json in finances:
-		if json['rate'] >= maxRate and j['balance'] < json['balance']:
-			j = json;
-	return j;
-
-def collectRates(finances):
-	rate = [];
-	for debt in finances:
-		rate.append(debt['rate']);
-	return rate;
 
 def printThings(tokenList):
 	for token in tokenList:

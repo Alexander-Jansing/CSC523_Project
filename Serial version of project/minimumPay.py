@@ -1,13 +1,17 @@
 import sys
+import numpy as np;
 
 ##This program will pay off debts by minimum payments only
+### WE NEED TO PUT A CHECK INTO PLACE TO SEE IF A DEBT IS PAID OFF
+#### IT IS OBVIOUS THAT THIS MEATHOD IS THE WORST, BUT WE SHOULD
+##### HAVE ACCURATE FINAL PAYOFF AMOUNTS REPORTED.
 def payLoans(file):
-	payOffs = getPayOffs(file[2]);
 	finances = readFile(file[1]);
 	totalDebt = sumDebt(finances);
 	totalPaid = 0;
 	##printThings(finances);
-	for i in range(len(payOffs)):
+	months = 0;
+	while(not (len(finances) == 1 and finances[0]['balance'] < 1)):
 		if len(finances) == 0:
 			break;
 		loopTotal = 0;
@@ -15,7 +19,8 @@ def payLoans(file):
 		finances = monthlyMinPay(finances, minPayment);
 		for payment in minPayment:
 			totalPaid += sum(payment);
-	print "It costs you $", totalPaid, "to pay off $", totalDebt, " in loans by only paying minimum payments.";
+		months += 1;
+	print "It cost you $", np.ceil(totalPaid), "to pay off $", np.ceil(totalDebt), "in loans over", months, "months";
 
 def getPayOffs(file):
 	po = [];
@@ -28,6 +33,10 @@ def getPayOffs(file):
 def monthlyMinPay(finances, minPayment):
 	for i in range(len(finances)):
 		finances[i]['balance'] -= minPayment[i][1];
+		if finances[i]['balance'] < 1:  # just assume that you can pony up an extra dollar
+			del finances[i]
+			monthlyMinPay(finances, minPayment);
+			break;
 	return finances;
 
 def minimumPayments(finances):
