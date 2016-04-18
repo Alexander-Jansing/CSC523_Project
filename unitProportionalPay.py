@@ -1,24 +1,39 @@
 import sys;
 import numpy as np;
+import math;
 
 ##This program will pay off debts by proportions
 def payLoans(file):
 	extra = float(file[2]);
 	finances = readFile(file[1]);
 	totalDebt = sumDebt(finances);
+	TOTAL = totalDebt;  # ONLY USE FOR FIND PROMPT
 	totalPaid = 0;
 	months = 0;
-	while(not (len(finances) == 1 and finances[0]['balance'] < 1)):
+	while(totalDebt > .01):
+		loopTotal = 0;
+		dontInclude = 0;
+		minPayTotal = 0;
 		if len(finances) == 0:
 			break;
-		loopTotal = 0;
 		minPayment = minimumPayments(finances);
 		finances = monthlyMinPay(finances, minPayment);
 		for payment in minPayment:
-			totalPaid += sum(payment);
-		totalPaid += payoffMax(finances, extra, loopTotal);
+			#print payment
+			minPayTotal += sum(payment);
+			dontInclude += payment[1]
+			#print loopTotal
+			#print payment
+		totalDebt -= minPayTotal;
+		totalDebt += dontInclude;
+		loopTotal = payoffProportionally(finances, extra, loopTotal);
+		totalDebt -= loopTotal;
+		loopTotal += minPayTotal;
+		totalPaid += loopTotal;
 		months += 1;
-	print "It cost you $", np.ceil(totalPaid), "to pay off $", np.ceil(totalDebt), "in loans over", months, "months";
+		if dontInclude == 0.0:
+			break
+	print "It cost you $", np.ceil(totalPaid), "to pay off $", np.ceil(TOTAL), "in loans over", months, "months";
 
 def getPayOffs(file):
 	po = [];
@@ -28,7 +43,7 @@ def getPayOffs(file):
 				po.append(float(n));
 	return po;
 
-def payoffMax(finances, extraPayoff, totalPaid):
+def payoffProportionally(finances, extraPayoff, totalPaid):
 	if len(finances) == 0:
 			return totalPaid;
 	else:
@@ -48,28 +63,55 @@ def reduceBalances(finances, extraPayoff):
 	paid = 0; 
 	for i in range(len(finances)):
 		if(len(finances) == 1):
-			return [finances, 0];
+			if finances[0]['balance'] < extraPayoff:
+				paid += finances[0]['balance'];
+				finances[0]['balance'] = 0;
+				return [finances, paid];
+			else:
+				finances[0]['balance'] -= extraPayoff;
+				paid += extraPayoff;
+				return [finances, paid];
 		sumInterests = findSum(finances, 'rate');   # IT LOOKS SLOPPY TO RECALCULATE THIS EVERY TIME,
 		sumBalances = findSum(finances, 'balance'); ## BUT WHEN DEBT IS PAID OFF, WE NEED IT TO BE
 													### REMOVED AND HAVE THE PROPORTIONS DISTRIBUTED
-		propToThisDebt = proportionedPayment(finances[i], sumInterests, sumBalances, extraPayoff);
+		props = proportions(finances, sumInterests, sumBalances, extraPayoff)
+		#print normalizer
+		propToThisDebt = proportionedPayment(props[i], extraPayoff);
+		# print propToThisDebt, " PROPORTION OF ", extraPayoff
 		if finances[i]['balance'] < propToThisDebt:
 			extraPayoff -= finances[i]['balance'];
 			paid += finances[i]['balance'];
 			del finances[i];
-			reduceBalances(finances, extraPayoff);
+			del props[i];
+			reduceBalances(finances, paid);
 			break;
 		else:
 			finances[i]['balance'] -= propToThisDebt;
 			paid += propToThisDebt;
 	return [finances, paid];
 
-def proportionedPayment(debt, rateSum, balSum, extraPayoff):
-	return debt['rate']/rateSum * extraPayoff;
+
+def proportions(finances, rateSum, balSum, extraPayoff):
+	b = 0;
+	r = 0;
+	A = []
+	for i in range(len(finances)):
+		b += finances[i]['balance']/balSum;
+		r += finances[i]['rate']/rateSum;
+		A.append(b*r);	
+	for i in range(1,len(A)):
+		A[i] -= sum(A[:i]);
+	inv = (b*r);
+	#print A;
+	return A;
+
+def proportionedPayment(prop, extraPayoff):
+	#print prop * extraPayoff;
+	return prop * extraPayoff;
 			
 def monthlyMinPay(finances, minPayment):
 	for i in range(len(finances)):
-		finances[i]['balance'] -= minPayment[i][1];
+		finances[i]['balance'] -= minPayment[i][1]; # ONLY PAYING OFF THE 3% OF BALANCE
 	return finances;
 
 def minimumPayments(finances):
@@ -85,11 +127,11 @@ def sumDebt(finances):
 	return totalDebt;
 
 def printCongrats(maxInterest):
-	print "Congrats! You paid off ", maxInterest, "!"
+	print("Congrats! You paid off ", maxInterest, "!");
 
 def printThings(tokenList):
 	for token in tokenList:
-		print token;
+		print(token);
 
 def readFile(file):
 	finances = [];

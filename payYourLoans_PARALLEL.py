@@ -15,9 +15,9 @@ def call(vars):
 	if rank == 1:
 		maxInterest.payLoans(vars);
 	if rank == 2:
-		unitProportionalPay.payLoans(vars);
-	if rank == 3:
 		directProportionalPay.payLoans(vars);
+	if rank == 3:
+		unitProportionalPay.payLoans(vars);
 	MPI.Finalize();
 
 

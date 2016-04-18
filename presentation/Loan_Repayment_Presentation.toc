@@ -1,0 +1,10 @@
+\beamer@endinputifotherversion {3.36pt}
+\beamer@sectionintoc {1}{Introduction}{1}{0}{1}
+\beamer@sectionintoc {2}{Methods}{7}{0}{2}
+\beamer@subsectionintoc {2}{1}{Minimum Payments Only}{7}{0}{2}
+\beamer@subsectionintoc {2}{2}{Paying off Max interest only}{8}{0}{2}
+\beamer@subsectionintoc {2}{3}{Proportion based solely on interest rates}{9}{0}{2}
+\beamer@subsectionintoc {2}{4}{Proportion based on interest rates and size of debt}{13}{0}{2}
+\beamer@sectionintoc {3}{Analysis}{17}{0}{3}
+\beamer@subsectionintoc {3}{1}{Running Time}{17}{0}{3}
+\beamer@subsectionintoc {3}{2}{Amounts paid}{18}{0}{3}
