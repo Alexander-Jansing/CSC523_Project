@@ -1,5 +1,5 @@
 import sys
-import mpi4py as MPI
+from mpi4py import MPI
 import maxInterest
 import minimumPay
 import unitProportionalPay
